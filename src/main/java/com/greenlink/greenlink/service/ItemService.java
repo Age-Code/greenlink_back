@@ -1,0 +1,41 @@
+package com.greenlink.greenlink.service;
+
+import com.greenlink.greenlink.domain.item.Item;
+import com.greenlink.greenlink.domain.item.ItemType;
+import com.greenlink.greenlink.dto.item.ItemDetailResponse;
+import com.greenlink.greenlink.dto.item.ItemListResponse;
+import com.greenlink.greenlink.repository.ItemRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ItemService {
+
+    private final ItemRepository itemRepository;
+
+    public List<ItemListResponse> getItems(ItemType itemType) {
+        List<Item> items;
+
+        if (itemType == null) {
+            items = itemRepository.findAllByDeletedFalse();
+        } else {
+            items = itemRepository.findAllByItemTypeAndDeletedFalse(itemType);
+        }
+
+        return items.stream()
+                .map(ItemListResponse::from)
+                .toList();
+    }
+
+    public ItemDetailResponse getItem(Long itemId) {
+        Item item = itemRepository.findByIdAndDeletedFalse(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("아이템을 찾을 수 없습니다."));
+
+        return ItemDetailResponse.from(item);
+    }
+}

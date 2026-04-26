@@ -1,0 +1,114 @@
+package com.greenlink.greenlink.service;
+
+import com.greenlink.greenlink.domain.item.Item;
+import com.greenlink.greenlink.domain.item.UserItem;
+import com.greenlink.greenlink.domain.quest.Quest;
+import com.greenlink.greenlink.domain.quest.QuestType;
+import com.greenlink.greenlink.domain.quest.UserQuest;
+import com.greenlink.greenlink.domain.user.User;
+import com.greenlink.greenlink.dto.auth.LoginRequest;
+import com.greenlink.greenlink.dto.auth.LoginResponse;
+import com.greenlink.greenlink.dto.auth.SignupRequest;
+import com.greenlink.greenlink.dto.auth.SignupResponse;
+import com.greenlink.greenlink.repository.ItemRepository;
+import com.greenlink.greenlink.repository.QuestRepository;
+import com.greenlink.greenlink.repository.UserItemRepository;
+import com.greenlink.greenlink.repository.UserQuestRepository;
+import com.greenlink.greenlink.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.greenlink.greenlink.security.JwtTokenProvider;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class AuthService {
+
+    private static final String DEFAULT_SEED_NAME = "바질 씨앗";
+    private static final String DEFAULT_POT_NAME = "기본 화분";
+
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
+    private final UserItemRepository userItemRepository;
+    private final QuestRepository questRepository;
+    private final UserQuestRepository userQuestRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @Transactional
+    public SignupResponse signup(SignupRequest request) {
+        validateDuplicateEmail(request.email());
+
+        String encodedPassword = passwordEncoder.encode(request.password());
+
+        User user = User.createUser(
+                request.email(),
+                encodedPassword,
+                request.nickname()
+        );
+
+        User savedUser = userRepository.save(user);
+
+        List<UserItem> grantedItems = grantDefaultItems(savedUser);
+
+        createAchievementUserQuests(savedUser);
+
+        return SignupResponse.of(savedUser, grantedItems);
+    }
+
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByEmailAndDeletedFalse(request.email())
+                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+
+        return LoginResponse.of(accessToken, user);
+    }
+
+    private void validateDuplicateEmail(String email) {
+        if (userRepository.existsByEmailAndDeletedFalse(email)) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+    }
+
+    private List<UserItem> grantDefaultItems(User user) {
+        Item basilSeed = itemRepository.findByNameAndDeletedFalse(DEFAULT_SEED_NAME)
+                .orElseThrow(() -> new IllegalStateException("기본 지급 아이템인 바질 씨앗이 등록되어 있지 않습니다."));
+
+        Item basicPot = itemRepository.findByNameAndDeletedFalse(DEFAULT_POT_NAME)
+                .orElseThrow(() -> new IllegalStateException("기본 지급 아이템인 기본 화분이 등록되어 있지 않습니다."));
+
+        List<UserItem> grantedItems = new ArrayList<>();
+
+        grantedItems.add(userItemRepository.save(UserItem.createOwned(user, basilSeed)));
+        grantedItems.add(userItemRepository.save(UserItem.createOwned(user, basicPot)));
+
+        return grantedItems;
+    }
+
+    private void createAchievementUserQuests(User user) {
+        List<Quest> achievementQuests =
+                questRepository.findAllByQuestTypeAndActiveTrueAndDeletedFalse(QuestType.ACHIEVEMENT);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Quest quest : achievementQuests) {
+            UserQuest userQuest = UserQuest.create(user, quest, now);
+            userQuestRepository.save(userQuest);
+        }
+    }
+}
