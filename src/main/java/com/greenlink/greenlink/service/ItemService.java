@@ -2,8 +2,7 @@ package com.greenlink.greenlink.service;
 
 import com.greenlink.greenlink.domain.item.Item;
 import com.greenlink.greenlink.domain.item.ItemType;
-import com.greenlink.greenlink.dto.item.ItemDetailResponse;
-import com.greenlink.greenlink.dto.item.ItemListResponse;
+import com.greenlink.greenlink.dto.ItemDto;
 import com.greenlink.greenlink.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,7 @@ public class ItemService {
 
     private final ItemRepository itemRepository;
 
-    public List<ItemListResponse> getItems(ItemType itemType) {
+    public List<ItemDto.ListResDto> getItems(ItemType itemType) {
         List<Item> items;
 
         if (itemType == null) {
@@ -28,14 +27,14 @@ public class ItemService {
         }
 
         return items.stream()
-                .map(ItemListResponse::from)
+                .map(ItemDto.ListResDto::from)
                 .toList();
     }
 
-    public ItemDetailResponse getItem(Long itemId) {
+    public ItemDto.DetailResDto getItem(Long itemId) {
         Item item = itemRepository.findByIdAndDeletedFalse(itemId)
                 .orElseThrow(() -> new IllegalArgumentException("아이템을 찾을 수 없습니다."));
 
-        return ItemDetailResponse.from(item);
+        return ItemDto.DetailResDto.from(item);
     }
 }

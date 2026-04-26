@@ -1,9 +1,7 @@
 package com.greenlink.greenlink.controller;
 
 import com.greenlink.greenlink.common.ApiResponse;
-import com.greenlink.greenlink.dto.user.UserMeResponse;
-import com.greenlink.greenlink.dto.user.UserUpdateNicknameRequest;
-import com.greenlink.greenlink.dto.user.UserUpdateNicknameResponse;
+import com.greenlink.greenlink.dto.UserDto;
 import com.greenlink.greenlink.security.CustomUserDetails;
 import com.greenlink.greenlink.service.UserService;
 import jakarta.validation.Valid;
@@ -19,20 +17,20 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public ApiResponse<UserMeResponse> getMe(
+    public ApiResponse<UserDto.MeResDto> getMe(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        UserMeResponse response = userService.getMe(userDetails.getUserId());
+        UserDto.MeResDto response = userService.getMe(userDetails.getUserId());
 
         return ApiResponse.success("내 정보 조회 성공", response);
     }
 
     @PatchMapping("/me")
-    public ApiResponse<UserUpdateNicknameResponse> updateNickname(
+    public ApiResponse<UserDto.UpdateNicknameResDto> updateNickname(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody UserUpdateNicknameRequest request
+            @Valid @RequestBody UserDto.UpdateNicknameReqDto request
     ) {
-        UserUpdateNicknameResponse response = userService.updateNickname(
+        UserDto.UpdateNicknameResDto response = userService.updateNickname(
                 userDetails.getUserId(),
                 request
         );

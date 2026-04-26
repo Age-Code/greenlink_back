@@ -3,8 +3,7 @@ package com.greenlink.greenlink.service;
 import com.greenlink.greenlink.domain.attend.Attend;
 import com.greenlink.greenlink.domain.quest.TargetType;
 import com.greenlink.greenlink.domain.user.User;
-import com.greenlink.greenlink.dto.attend.AttendMonthResponse;
-import com.greenlink.greenlink.dto.attend.AttendTodayResponse;
+import com.greenlink.greenlink.dto.AttendDto;
 import com.greenlink.greenlink.repository.AttendRepository;
 import com.greenlink.greenlink.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ public class AttendService {
     private final QuestProgressService questProgressService;
 
     @Transactional
-    public AttendTodayResponse attendToday(Long userId) {
+    public AttendDto.AttendTodayResDto attendToday(Long userId) {
         User user = findActiveUser(userId);
         LocalDate today = LocalDate.now();
 
@@ -44,10 +43,10 @@ public class AttendService {
 
         questProgressService.increaseProgress(user, TargetType.ATTEND, 1);
 
-        return AttendTodayResponse.from(savedAttend);
+        return AttendDto.AttendTodayResDto.from(savedAttend);
     }
 
-    public AttendMonthResponse getMyAttends(Long userId, Integer year, Integer month) {
+    public AttendDto.AttendMonthResDto getMyAttends(Long userId, Integer year, Integer month) {
         User user = findActiveUser(userId);
 
         YearMonth targetMonth = resolveYearMonth(year, month);
@@ -63,7 +62,7 @@ public class AttendService {
                 .map(Attend::getStreakCount)
                 .orElse(0);
 
-        return AttendMonthResponse.of(
+        return AttendDto.AttendMonthResDto.of(
                 targetMonth.getYear(),
                 targetMonth.getMonthValue(),
                 attends,

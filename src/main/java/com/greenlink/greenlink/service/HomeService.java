@@ -3,7 +3,7 @@ package com.greenlink.greenlink.service;
 import com.greenlink.greenlink.domain.plant.UserPlant;
 import com.greenlink.greenlink.domain.plant.UserPlantStatus;
 import com.greenlink.greenlink.domain.user.User;
-import com.greenlink.greenlink.dto.home.HomeResponse;
+import com.greenlink.greenlink.dto.HomeDto;
 import com.greenlink.greenlink.repository.UserPlantRepository;
 import com.greenlink.greenlink.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class HomeService {
     private final UserPlantRepository userPlantRepository;
 
     @Transactional
-    public HomeResponse getHome(Long userId) {
+    public HomeDto.ResDto getHome(Long userId) {
         User user = findActiveUser(userId);
         LocalDate today = LocalDate.now();
 
@@ -32,7 +32,7 @@ public class HomeService {
             mainUserPlant.refreshHarvestableStatus(today);
         }
 
-        return HomeResponse.of(user, mainUserPlant, today);
+        return HomeDto.ResDto.of(user, mainUserPlant, today);
     }
 
     private UserPlant findMainUserPlant(User user) {

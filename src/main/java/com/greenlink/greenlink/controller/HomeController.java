@@ -1,7 +1,7 @@
 package com.greenlink.greenlink.controller;
 
 import com.greenlink.greenlink.common.ApiResponse;
-import com.greenlink.greenlink.dto.home.HomeResponse;
+import com.greenlink.greenlink.dto.HomeDto;
 import com.greenlink.greenlink.security.CustomUserDetails;
 import com.greenlink.greenlink.service.HomeService;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +16,10 @@ public class HomeController {
     private final HomeService homeService;
 
     @GetMapping
-    public ApiResponse<HomeResponse> getHome(
+    public ApiResponse<HomeDto.ResDto> getHome(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        HomeResponse response = homeService.getHome(userDetails.getUserId());
+        HomeDto.ResDto response = homeService.getHome(userDetails.getUserId());
 
         return ApiResponse.success("홈 데이터 조회 성공", response);
     }

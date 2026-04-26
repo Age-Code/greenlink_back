@@ -3,12 +3,7 @@ package com.greenlink.greenlink.controller;
 import com.greenlink.greenlink.common.ApiResponse;
 import com.greenlink.greenlink.domain.item.ItemType;
 import com.greenlink.greenlink.domain.item.UserItemStatus;
-import com.greenlink.greenlink.dto.useritem.EquipPotRequest;
-import com.greenlink.greenlink.dto.useritem.EquipPotResponse;
-import com.greenlink.greenlink.dto.useritem.UnequipPotResponse;
-import com.greenlink.greenlink.dto.useritem.UseNutrientRequest;
-import com.greenlink.greenlink.dto.useritem.UseNutrientResponse;
-import com.greenlink.greenlink.dto.useritem.UserItemListResponse;
+import com.greenlink.greenlink.dto.UserItemDto;
 import com.greenlink.greenlink.security.CustomUserDetails;
 import com.greenlink.greenlink.service.UserItemService;
 import jakarta.validation.Valid;
@@ -26,12 +21,12 @@ public class UserItemController {
     private final UserItemService userItemService;
 
     @GetMapping
-    public ApiResponse<List<UserItemListResponse>> getUserItems(
+    public ApiResponse<List<UserItemDto.ListResDto>> getUserItems(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) ItemType itemType,
             @RequestParam(required = false) UserItemStatus status
     ) {
-        List<UserItemListResponse> response = userItemService.getUserItems(
+        List<UserItemDto.ListResDto> response = userItemService.getUserItems(
                 userDetails.getUserId(),
                 itemType,
                 status
@@ -41,12 +36,12 @@ public class UserItemController {
     }
 
     @PostMapping("/{userItemId}/equip-pot")
-    public ApiResponse<EquipPotResponse> equipPot(
+    public ApiResponse<UserItemDto.EquipPotResDto> equipPot(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userItemId,
-            @Valid @RequestBody EquipPotRequest request
+            @Valid @RequestBody UserItemDto.EquipPotReqDto request
     ) {
-        EquipPotResponse response = userItemService.equipPot(
+        UserItemDto.EquipPotResDto response = userItemService.equipPot(
                 userDetails.getUserId(),
                 userItemId,
                 request
@@ -56,11 +51,11 @@ public class UserItemController {
     }
 
     @PostMapping("/{userItemId}/unequip-pot")
-    public ApiResponse<UnequipPotResponse> unequipPot(
+    public ApiResponse<UserItemDto.UnequipPotResDto> unequipPot(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userItemId
     ) {
-        UnequipPotResponse response = userItemService.unequipPot(
+        UserItemDto.UnequipPotResDto response = userItemService.unequipPot(
                 userDetails.getUserId(),
                 userItemId
         );
@@ -69,12 +64,12 @@ public class UserItemController {
     }
 
     @PostMapping("/{userItemId}/use-nutrient")
-    public ApiResponse<UseNutrientResponse> useNutrient(
+    public ApiResponse<UserItemDto.UseNutrientResDto> useNutrient(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userItemId,
-            @Valid @RequestBody UseNutrientRequest request
+            @Valid @RequestBody UserItemDto.UseNutrientReqDto request
     ) {
-        UseNutrientResponse response = userItemService.useNutrient(
+        UserItemDto.UseNutrientResDto response = userItemService.useNutrient(
                 userDetails.getUserId(),
                 userItemId,
                 request

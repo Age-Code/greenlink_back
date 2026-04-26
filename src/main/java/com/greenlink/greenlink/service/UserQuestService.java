@@ -8,9 +8,7 @@ import com.greenlink.greenlink.domain.quest.ResetCycle;
 import com.greenlink.greenlink.domain.quest.UserQuest;
 import com.greenlink.greenlink.domain.quest.UserQuestStatus;
 import com.greenlink.greenlink.domain.user.User;
-import com.greenlink.greenlink.dto.quest.UserQuestDetailResponse;
-import com.greenlink.greenlink.dto.quest.UserQuestListResponse;
-import com.greenlink.greenlink.dto.quest.UserQuestRewardResponse;
+import com.greenlink.greenlink.dto.QuestDto;
 import com.greenlink.greenlink.repository.QuestRepository;
 import com.greenlink.greenlink.repository.UserItemRepository;
 import com.greenlink.greenlink.repository.UserQuestRepository;
@@ -37,7 +35,7 @@ public class UserQuestService {
     private final UserItemRepository userItemRepository;
 
     @Transactional
-    public List<UserQuestListResponse> getUserQuests(
+    public List<QuestDto.UserQuestListResDto> getUserQuests(
             Long userId,
             QuestType questType,
             UserQuestStatus status
@@ -53,12 +51,12 @@ public class UserQuestService {
         return userQuests.stream()
                 .filter(userQuest -> questType == null || userQuest.getQuest().getQuestType() == questType)
                 .filter(userQuest -> status == null || userQuest.getStatus() == status)
-                .map(UserQuestListResponse::from)
+                .map(QuestDto.UserQuestListResDto::from)
                 .toList();
     }
 
     @Transactional
-    public UserQuestDetailResponse getUserQuest(Long userId, Long userQuestId) {
+    public QuestDto.UserQuestDetailResDto getUserQuest(Long userId, Long userQuestId) {
         User user = findActiveUser(userId);
 
         UserQuest userQuest = userQuestRepository.findByIdAndUserAndDeletedFalse(userQuestId, user)
@@ -66,11 +64,11 @@ public class UserQuestService {
 
         expireIfNeeded(userQuest);
 
-        return UserQuestDetailResponse.from(userQuest);
+        return QuestDto.UserQuestDetailResDto.from(userQuest);
     }
 
     @Transactional
-    public UserQuestRewardResponse receiveReward(Long userId, Long userQuestId) {
+    public QuestDto.UserQuestRewardResDto receiveReward(Long userId, Long userQuestId) {
         User user = findActiveUser(userId);
 
         UserQuest userQuest = userQuestRepository.findByIdAndUserAndDeletedFalse(userQuestId, user)
@@ -99,7 +97,7 @@ public class UserQuestService {
 
         userQuest.completeReward();
 
-        return UserQuestRewardResponse.of(
+        return QuestDto.UserQuestRewardResDto.of(
                 userQuest,
                 rewardItem,
                 rewardQuantity,

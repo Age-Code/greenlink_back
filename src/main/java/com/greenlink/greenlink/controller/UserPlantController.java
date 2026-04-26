@@ -2,13 +2,7 @@ package com.greenlink.greenlink.controller;
 
 import com.greenlink.greenlink.common.ApiResponse;
 import com.greenlink.greenlink.domain.plant.UserPlantStatus;
-import com.greenlink.greenlink.dto.userplant.UserPlantCreateRequest;
-import com.greenlink.greenlink.dto.userplant.UserPlantCreateResponse;
-import com.greenlink.greenlink.dto.userplant.UserPlantDetailResponse;
-import com.greenlink.greenlink.dto.userplant.UserPlantListResponse;
-import com.greenlink.greenlink.dto.userplant.UserPlantUpdateNicknameRequest;
-import com.greenlink.greenlink.dto.userplant.UserPlantUpdateNicknameResponse;
-import com.greenlink.greenlink.dto.userplant.UserPlantHarvestResponse;
+import com.greenlink.greenlink.dto.UserPlantDto;
 import com.greenlink.greenlink.security.CustomUserDetails;
 import com.greenlink.greenlink.service.UserPlantService;
 import jakarta.validation.Valid;
@@ -26,42 +20,51 @@ public class UserPlantController {
     private final UserPlantService userPlantService;
 
     @PostMapping
-    public ApiResponse<UserPlantCreateResponse> createUserPlant(
+    public ApiResponse<UserPlantDto.CreateResDto> createUserPlant(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody UserPlantCreateRequest request
+            @Valid @RequestBody UserPlantDto.CreateReqDto request
     ) {
-        UserPlantCreateResponse response = userPlantService.createUserPlant(userDetails.getUserId(), request);
+        UserPlantDto.CreateResDto response = userPlantService.createUserPlant(
+                userDetails.getUserId(),
+                request
+        );
 
         return ApiResponse.success("식물이 생성되었습니다.", response);
     }
 
     @GetMapping
-    public ApiResponse<List<UserPlantListResponse>> getUserPlants(
+    public ApiResponse<List<UserPlantDto.ListResDto>> getUserPlants(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) UserPlantStatus status
     ) {
-        List<UserPlantListResponse> response = userPlantService.getUserPlants(userDetails.getUserId(), status);
+        List<UserPlantDto.ListResDto> response = userPlantService.getUserPlants(
+                userDetails.getUserId(),
+                status
+        );
 
         return ApiResponse.success("내 식물 목록 조회 성공", response);
     }
 
     @GetMapping("/{userPlantId}")
-    public ApiResponse<UserPlantDetailResponse> getUserPlant(
+    public ApiResponse<UserPlantDto.DetailResDto> getUserPlant(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userPlantId
     ) {
-        UserPlantDetailResponse response = userPlantService.getUserPlant(userDetails.getUserId(), userPlantId);
+        UserPlantDto.DetailResDto response = userPlantService.getUserPlant(
+                userDetails.getUserId(),
+                userPlantId
+        );
 
         return ApiResponse.success("내 식물 상세 조회 성공", response);
     }
 
     @PatchMapping("/{userPlantId}")
-    public ApiResponse<UserPlantUpdateNicknameResponse> updateNickname(
+    public ApiResponse<UserPlantDto.UpdateNicknameResDto> updateNickname(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userPlantId,
-            @Valid @RequestBody UserPlantUpdateNicknameRequest request
+            @Valid @RequestBody UserPlantDto.UpdateNicknameReqDto request
     ) {
-        UserPlantUpdateNicknameResponse response = userPlantService.updateNickname(
+        UserPlantDto.UpdateNicknameResDto response = userPlantService.updateNickname(
                 userDetails.getUserId(),
                 userPlantId,
                 request
@@ -71,11 +74,14 @@ public class UserPlantController {
     }
 
     @PostMapping("/{userPlantId}/harvest")
-    public ApiResponse<UserPlantHarvestResponse> harvestUserPlant(
+    public ApiResponse<UserPlantDto.HarvestResDto> harvestUserPlant(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userPlantId
     ) {
-        UserPlantHarvestResponse response = userPlantService.harvestUserPlant(userDetails.getUserId(), userPlantId);
+        UserPlantDto.HarvestResDto response = userPlantService.harvestUserPlant(
+                userDetails.getUserId(),
+                userPlantId
+        );
 
         return ApiResponse.success("식물 수확이 완료되었습니다.", response);
     }

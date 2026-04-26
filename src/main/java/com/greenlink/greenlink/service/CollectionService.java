@@ -4,8 +4,7 @@ import com.greenlink.greenlink.domain.plant.Plant;
 import com.greenlink.greenlink.domain.plant.UserPlant;
 import com.greenlink.greenlink.domain.plant.UserPlantStatus;
 import com.greenlink.greenlink.domain.user.User;
-import com.greenlink.greenlink.dto.collection.CollectionDetailResponse;
-import com.greenlink.greenlink.dto.collection.CollectionListResponse;
+import com.greenlink.greenlink.dto.CollectionDto;
 import com.greenlink.greenlink.repository.PlantRepository;
 import com.greenlink.greenlink.repository.UserPlantRepository;
 import com.greenlink.greenlink.repository.UserRepository;
@@ -25,7 +24,7 @@ public class CollectionService {
     private final PlantRepository plantRepository;
     private final UserPlantRepository userPlantRepository;
 
-    public List<CollectionListResponse> getCollections(Long userId) {
+    public List<CollectionDto.ListResDto> getCollections(Long userId) {
         User user = findActiveUser(userId);
 
         List<Plant> plants = plantRepository.findAllByDeletedFalse();
@@ -35,7 +34,7 @@ public class CollectionService {
                 .toList();
     }
 
-    public CollectionDetailResponse getCollection(Long userId, Long plantId) {
+    public CollectionDto.DetailResDto getCollection(Long userId, Long plantId) {
         User user = findActiveUser(userId);
 
         Plant plant = plantRepository.findByIdAndDeletedFalse(plantId)
@@ -48,10 +47,10 @@ public class CollectionService {
                         UserPlantStatus.HARVESTED
                 );
 
-        return CollectionDetailResponse.of(plant, harvestedPlants);
+        return CollectionDto.DetailResDto.of(plant, harvestedPlants);
     }
 
-    private CollectionListResponse toCollectionListResponse(User user, Plant plant) {
+    private CollectionDto.ListResDto toCollectionListResponse(User user, Plant plant) {
         List<UserPlant> harvestedPlants =
                 userPlantRepository.findAllByUserAndPlantAndStatusAndDeletedFalseOrderByHarvestedAtAsc(
                         user,
@@ -66,7 +65,7 @@ public class CollectionService {
                 ? harvestedPlants.get(0).getHarvestedAt()
                 : null;
 
-        return CollectionListResponse.of(
+        return CollectionDto.ListResDto.of(
                 plant,
                 collected,
                 harvestCount,

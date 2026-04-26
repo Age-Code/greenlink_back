@@ -1,9 +1,7 @@
 package com.greenlink.greenlink.service;
 
 import com.greenlink.greenlink.domain.user.User;
-import com.greenlink.greenlink.dto.user.UserMeResponse;
-import com.greenlink.greenlink.dto.user.UserUpdateNicknameRequest;
-import com.greenlink.greenlink.dto.user.UserUpdateNicknameResponse;
+import com.greenlink.greenlink.dto.UserDto;
 import com.greenlink.greenlink.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,19 +14,22 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserMeResponse getMe(Long userId) {
+    public UserDto.MeResDto getMe(Long userId) {
         User user = findActiveUser(userId);
 
-        return UserMeResponse.from(user);
+        return UserDto.MeResDto.from(user);
     }
 
     @Transactional
-    public UserUpdateNicknameResponse updateNickname(Long userId, UserUpdateNicknameRequest request) {
+    public UserDto.UpdateNicknameResDto updateNickname(
+            Long userId,
+            UserDto.UpdateNicknameReqDto request
+    ) {
         User user = findActiveUser(userId);
 
-        user.updateNickname(request.nickname());
+        user.updateNickname(request.getNickname());
 
-        return UserUpdateNicknameResponse.from(user);
+        return UserDto.UpdateNicknameResDto.from(user);
     }
 
     private User findActiveUser(Long userId) {

@@ -6,20 +6,17 @@ import com.greenlink.greenlink.domain.quest.Quest;
 import com.greenlink.greenlink.domain.quest.QuestType;
 import com.greenlink.greenlink.domain.quest.UserQuest;
 import com.greenlink.greenlink.domain.user.User;
-import com.greenlink.greenlink.dto.auth.LoginRequest;
-import com.greenlink.greenlink.dto.auth.LoginResponse;
-import com.greenlink.greenlink.dto.auth.SignupRequest;
-import com.greenlink.greenlink.dto.auth.SignupResponse;
+import com.greenlink.greenlink.dto.AuthDto;
 import com.greenlink.greenlink.repository.ItemRepository;
 import com.greenlink.greenlink.repository.QuestRepository;
 import com.greenlink.greenlink.repository.UserItemRepository;
 import com.greenlink.greenlink.repository.UserQuestRepository;
 import com.greenlink.greenlink.repository.UserRepository;
+import com.greenlink.greenlink.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.greenlink.greenlink.security.JwtTokenProvider;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,15 +39,15 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional
-    public SignupResponse signup(SignupRequest request) {
-        validateDuplicateEmail(request.email());
+    public AuthDto.SignupResDto signup(AuthDto.SignupReqDto request) {
+        validateDuplicateEmail(request.getEmail());
 
-        String encodedPassword = passwordEncoder.encode(request.password());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         User user = User.createUser(
-                request.email(),
+                request.getEmail(),
                 encodedPassword,
-                request.nickname()
+                request.getNickname()
         );
 
         User savedUser = userRepository.save(user);
@@ -59,14 +56,14 @@ public class AuthService {
 
         createAchievementUserQuests(savedUser);
 
-        return SignupResponse.of(savedUser, grantedItems);
+        return AuthDto.SignupResDto.of(savedUser, grantedItems);
     }
 
-    public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailAndDeletedFalse(request.email())
+    public AuthDto.LoginResDto login(AuthDto.LoginReqDto request) {
+        User user = userRepository.findByEmailAndDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
@@ -76,7 +73,7 @@ public class AuthService {
                 user.getRole().name()
         );
 
-        return LoginResponse.of(accessToken, user);
+        return AuthDto.LoginResDto.of(accessToken, user);
     }
 
     private void validateDuplicateEmail(String email) {

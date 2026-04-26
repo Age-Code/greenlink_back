@@ -3,9 +3,7 @@ package com.greenlink.greenlink.controller;
 import com.greenlink.greenlink.common.ApiResponse;
 import com.greenlink.greenlink.domain.quest.QuestType;
 import com.greenlink.greenlink.domain.quest.UserQuestStatus;
-import com.greenlink.greenlink.dto.quest.UserQuestDetailResponse;
-import com.greenlink.greenlink.dto.quest.UserQuestListResponse;
-import com.greenlink.greenlink.dto.quest.UserQuestRewardResponse;
+import com.greenlink.greenlink.dto.QuestDto;
 import com.greenlink.greenlink.security.CustomUserDetails;
 import com.greenlink.greenlink.service.UserQuestService;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +20,12 @@ public class UserQuestController {
     private final UserQuestService userQuestService;
 
     @GetMapping
-    public ApiResponse<List<UserQuestListResponse>> getUserQuests(
+    public ApiResponse<List<QuestDto.UserQuestListResDto>> getUserQuests(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) QuestType questType,
             @RequestParam(required = false) UserQuestStatus status
     ) {
-        List<UserQuestListResponse> response = userQuestService.getUserQuests(
+        List<QuestDto.UserQuestListResDto> response = userQuestService.getUserQuests(
                 userDetails.getUserId(),
                 questType,
                 status
@@ -37,21 +35,27 @@ public class UserQuestController {
     }
 
     @GetMapping("/{userQuestId}")
-    public ApiResponse<UserQuestDetailResponse> getUserQuest(
+    public ApiResponse<QuestDto.UserQuestDetailResDto> getUserQuest(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userQuestId
     ) {
-        UserQuestDetailResponse response = userQuestService.getUserQuest(userDetails.getUserId(), userQuestId);
+        QuestDto.UserQuestDetailResDto response = userQuestService.getUserQuest(
+                userDetails.getUserId(),
+                userQuestId
+        );
 
         return ApiResponse.success("내 퀘스트 상세 조회 성공", response);
     }
 
     @PostMapping("/{userQuestId}/reward")
-    public ApiResponse<UserQuestRewardResponse> receiveReward(
+    public ApiResponse<QuestDto.UserQuestRewardResDto> receiveReward(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userQuestId
     ) {
-        UserQuestRewardResponse response = userQuestService.receiveReward(userDetails.getUserId(), userQuestId);
+        QuestDto.UserQuestRewardResDto response = userQuestService.receiveReward(
+                userDetails.getUserId(),
+                userQuestId
+        );
 
         return ApiResponse.success("퀘스트 보상을 수령했습니다.", response);
     }

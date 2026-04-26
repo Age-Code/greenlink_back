@@ -2,8 +2,7 @@ package com.greenlink.greenlink.service;
 
 import com.greenlink.greenlink.domain.quest.Quest;
 import com.greenlink.greenlink.domain.quest.QuestType;
-import com.greenlink.greenlink.dto.quest.QuestDetailResponse;
-import com.greenlink.greenlink.dto.quest.QuestListResponse;
+import com.greenlink.greenlink.dto.QuestDto;
 import com.greenlink.greenlink.repository.QuestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,7 @@ public class QuestService {
 
     private final QuestRepository questRepository;
 
-    public List<QuestListResponse> getQuests(QuestType questType) {
+    public List<QuestDto.ListResDto> getQuests(QuestType questType) {
         List<Quest> quests;
 
         if (questType == null) {
@@ -28,14 +27,14 @@ public class QuestService {
         }
 
         return quests.stream()
-                .map(QuestListResponse::from)
+                .map(QuestDto.ListResDto::from)
                 .toList();
     }
 
-    public QuestDetailResponse getQuest(Long questId) {
+    public QuestDto.DetailResDto getQuest(Long questId) {
         Quest quest = questRepository.findByIdAndActiveTrueAndDeletedFalse(questId)
                 .orElseThrow(() -> new IllegalArgumentException("퀘스트를 찾을 수 없습니다."));
 
-        return QuestDetailResponse.from(quest);
+        return QuestDto.DetailResDto.from(quest);
     }
 }
