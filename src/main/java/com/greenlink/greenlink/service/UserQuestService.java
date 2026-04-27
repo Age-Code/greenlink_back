@@ -42,13 +42,25 @@ public class UserQuestService {
     ) {
         User user = findActiveUser(userId);
 
+        /*
+         * 현재 날짜 기준으로 오늘/이번 주/이번 달에 해당하는 user_quest가 없으면 생성한다.
+         * DAILY, WEEKLY, MONTHLY는 현재 기간 기준으로 생성되고,
+         * ACHIEVEMENT는 한 번만 생성된다.
+         */
         createCurrentUserQuestsIfNotExists(user);
+
+        LocalDate today = LocalDate.now();
 
         List<UserQuest> userQuests = userQuestRepository.findAllByUserAndDeletedFalse(user);
 
+        /*
+         * 기존에 생성되어 있던 과거 기간 퀘스트는 상태를 EXPIRED로 갱신할 수 있다.
+         * 단, 목록 응답에서는 아래 isVisibleCurrentQuest()로 현재 기간 퀘스트만 보여준다.
+         */
         userQuests.forEach(this::expireIfNeeded);
 
         return userQuests.stream()
+                .filter(userQuest -> isVisibleCurrentQuest(userQuest, today))
                 .filter(userQuest -> questType == null || userQuest.getQuest().getQuestType() == questType)
                 .filter(userQuest -> status == null || userQuest.getStatus() == status)
                 .map(QuestDto.UserQuestListResDto::from)
@@ -64,6 +76,18 @@ public class UserQuestService {
 
         expireIfNeeded(userQuest);
 
+        /*
+         * 1차 MVP에서는 상세 조회는 그대로 허용한다.
+         * 목록에서는 과거 DAILY/WEEKLY/MONTHLY를 숨기지만,
+         * 상세 API는 이미 알고 있는 ID에 대한 조회이므로 막지 않는다.
+         *
+         * 만약 과거 기간 퀘스트 상세 조회도 막고 싶다면 아래 주석을 해제하면 된다.
+         *
+         * if (!isVisibleCurrentQuest(userQuest, LocalDate.now())) {
+         *     throw new IllegalArgumentException("현재 조회할 수 없는 퀘스트입니다.");
+         * }
+         */
+
         return QuestDto.UserQuestDetailResDto.from(userQuest);
     }
 
@@ -75,6 +99,15 @@ public class UserQuestService {
                 .orElseThrow(() -> new IllegalArgumentException("내 퀘스트를 찾을 수 없습니다."));
 
         expireIfNeeded(userQuest);
+
+        /*
+         * 보상 수령은 과거 기간 퀘스트를 막는 편이 안전하다.
+         * 예를 들어 지난주 WEEKLY 퀘스트가 ACHIEVABLE 상태로 남아 있더라도,
+         * 현재 목록에는 보이지 않게 했으므로 보상도 현재 기간 퀘스트 또는 업적 퀘스트만 허용한다.
+         */
+        if (!isVisibleCurrentQuest(userQuest, LocalDate.now())) {
+            throw new IllegalStateException("현재 기간의 퀘스트만 보상을 수령할 수 있습니다.");
+        }
 
         if (userQuest.getStatus() != UserQuestStatus.ACHIEVABLE) {
             throw new IllegalStateException("아직 보상을 수령할 수 없는 퀘스트입니다.");
@@ -129,6 +162,30 @@ public class UserQuestService {
                 .orElseGet(() -> userQuestRepository.save(
                         UserQuest.create(user, quest, periodStart)
                 ));
+    }
+
+    private boolean isVisibleCurrentQuest(UserQuest userQuest, LocalDate today) {
+        Quest quest = userQuest.getQuest();
+
+        /*
+         * 업적 퀘스트는 기간형 퀘스트가 아니므로 계속 보여준다.
+         * 예: 허브 3종 키우기, 식물 10개 수확하기 등
+         */
+        if (quest.getQuestType() == QuestType.ACHIEVEMENT) {
+            return true;
+        }
+
+        /*
+         * resetCycle이 NONE인 퀘스트도 기간 제한이 없으므로 계속 보여준다.
+         */
+        if (quest.getResetCycle() == ResetCycle.NONE) {
+            return true;
+        }
+
+        LocalDateTime currentPeriodStart = getPeriodStart(quest.getResetCycle(), today);
+
+        return userQuest.getStartedAt() != null
+                && userQuest.getStartedAt().isEqual(currentPeriodStart);
     }
 
     private LocalDateTime getPeriodStart(ResetCycle resetCycle, LocalDate today) {
