@@ -48,4 +48,6 @@ public interface UserPlantRepository extends JpaRepository<UserPlant, Long> {
     );
 
     Optional<UserPlant> findFirstByUserAndDeletedFalseOrderByCreatedAtDesc(User user);
+
+    Optional<UserPlant> findByIdAndDeletedFalse(Long id);
 }

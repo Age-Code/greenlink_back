@@ -55,6 +55,8 @@ public class SecurityConfig {
                         // 인증 없이 허용
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
 
+                        .requestMatchers("/uploads/**").permitAll()
+
                         // 개발 초기 데이터 등록용
                         // 실제 운영에서는 ADMIN 권한으로 제한해야 함
                         .requestMatchers("/api/admin/**").permitAll()
@@ -63,6 +65,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/plants/**").permitAll()
                         .requestMatchers("/api/items/**").permitAll()
                         .requestMatchers("/api/quests/**").permitAll()
+
+                        // IoT 기기용 API
+                        // JWT가 아니라 X-DEVICE-KEY로 서비스 내부에서 검증
+                        .requestMatchers("/api/iot/raspberry/**").permitAll()
+                        .requestMatchers("/api/iot/esp/**").permitAll()
+                        .requestMatchers("/api/iot/commands/**").permitAll()
+                        .requestMatchers("/api/iot/plant-images").permitAll()
 
                         // 그 외 API는 JWT 인증 필요
                         .anyRequest().authenticated()

@@ -37,5 +37,9 @@ out/
 .vscode/
 
 ### YAML ###
-.yaml
-.yam
+*.yaml
+*.yml
+
+src/main/resources/yaml/application-keys.yaml
+src/main/resources/yaml/*.yaml
+src/main/resources/yaml/*.yml
