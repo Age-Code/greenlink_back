@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "device_command")
 public class DeviceCommand {
 
-    private static final int DEFAULT_WATER_DURATION_SECONDS = 5;
+    private static final int DEFAULT_WATER_DURATION_SECONDS = 1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

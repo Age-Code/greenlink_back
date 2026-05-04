@@ -55,8 +55,6 @@ public class SecurityConfig {
                         // 인증 없이 허용
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
 
-                        .requestMatchers("/uploads/**").permitAll()
-
                         // 개발 초기 데이터 등록용
                         // 실제 운영에서는 ADMIN 권한으로 제한해야 함
                         .requestMatchers("/api/admin/**").permitAll()

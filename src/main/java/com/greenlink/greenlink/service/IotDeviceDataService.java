@@ -14,18 +14,11 @@ import com.greenlink.greenlink.repository.PlantImageRepository;
 import com.greenlink.greenlink.repository.RaspberrySensorDataRepository;
 import com.greenlink.greenlink.repository.UserPlantRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Set;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,16 +31,8 @@ public class IotDeviceDataService {
     private final PlantImageRepository plantImageRepository;
     private final UserPlantRepository userPlantRepository;
     private final GrowSpacePlantRepository growSpacePlantRepository;
+    private final S3UploadService s3UploadService;
 
-    @Value("${file.upload-dir:uploads}")
-    private String uploadDir;
-
-    /**
-     * 라즈베리파이 환경 데이터 저장
-     *
-     * Header:
-     * X-DEVICE-KEY: RPI-CAPSTONE-001
-     */
     @Transactional
     public IotDeviceDto.RaspberryEnvironmentResDto saveRaspberryEnvironment(
             String deviceKey,
@@ -80,12 +65,6 @@ public class IotDeviceDataService {
         return IotDeviceDto.RaspberryEnvironmentResDto.from(savedSensorData);
     }
 
-    /**
-     * ESP 토양수분 데이터 저장
-     *
-     * Header:
-     * X-DEVICE-KEY: ESP-BASIL-001
-     */
     @Transactional
     public IotDeviceDto.EspSoilMoistureResDto saveEspSoilMoisture(
             String deviceKey,
@@ -118,17 +97,6 @@ public class IotDeviceDataService {
         return IotDeviceDto.EspSoilMoistureResDto.from(savedSensorData);
     }
 
-    /**
-     * 라즈베리파이 식물 이미지 업로드
-     *
-     * Header:
-     * X-DEVICE-KEY: RPI-CAPSTONE-001
-     *
-     * multipart/form-data:
-     * - file
-     * - userPlantId 선택
-     * - capturedAt 선택
-     */
     @Transactional
     public IotDeviceDto.PlantImageUploadResDto savePlantImage(
             String deviceKey,
@@ -146,12 +114,6 @@ public class IotDeviceDataService {
             throw new IllegalStateException("라즈베리파이에 연결된 재배 공간이 없습니다.");
         }
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("업로드할 이미지 파일이 필요합니다.");
-        }
-
-        validateImageFile(file);
-
         UserPlant userPlant = null;
 
         if (userPlantId != null) {
@@ -168,9 +130,8 @@ public class IotDeviceDataService {
             }
         }
 
+        String imageUrl = s3UploadService.uploadUserPlantImage(file, userPlantId);
         String originalFilename = file.getOriginalFilename();
-        String storedFilename = createStoredFilename(originalFilename, userPlantId);
-        String imageUrl = saveFile(file, storedFilename);
 
         PlantImage plantImage = PlantImage.create(
                 growSpace,
@@ -206,72 +167,6 @@ public class IotDeviceDataService {
     private void validateEspDevice(IotDevice device) {
         if (!device.isEsp32()) {
             throw new IllegalStateException("ESP32 기기만 토양수분 데이터를 전송할 수 있습니다.");
-        }
-    }
-
-    private void validateImageFile(MultipartFile file) {
-        String contentType = file.getContentType();
-
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
-        }
-
-        long maxSize = 10 * 1024 * 1024;
-
-        if (file.getSize() > maxSize) {
-            throw new IllegalArgumentException("이미지 파일은 10MB 이하만 업로드할 수 있습니다.");
-        }
-
-        String originalFilename = file.getOriginalFilename();
-
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("파일명이 올바르지 않습니다.");
-        }
-
-        String extension = getExtension(originalFilename).toLowerCase();
-
-        Set<String> allowedExtensions = Set.of("jpg", "jpeg", "png", "webp");
-
-        if (!allowedExtensions.contains(extension)) {
-            throw new IllegalArgumentException("jpg, jpeg, png, webp 파일만 업로드할 수 있습니다.");
-        }
-    }
-
-    private String createStoredFilename(String originalFilename, Long userPlantId) {
-        String extension = getExtension(originalFilename);
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-        String uuid = UUID.randomUUID().toString().substring(0, 8);
-
-        if (userPlantId == null) {
-            return "grow-space-" + timestamp + "-" + uuid + "." + extension;
-        }
-
-        return "user-plant-" + userPlantId + "-" + timestamp + "-" + uuid + "." + extension;
-    }
-
-    private String getExtension(String filename) {
-        int dotIndex = filename.lastIndexOf(".");
-
-        if (dotIndex == -1 || dotIndex == filename.length() - 1) {
-            throw new IllegalArgumentException("파일 확장자가 없습니다.");
-        }
-
-        return filename.substring(dotIndex + 1);
-    }
-
-    private String saveFile(MultipartFile file, String storedFilename) {
-        try {
-            Path uploadPath = Path.of(uploadDir, "iot");
-
-            Files.createDirectories(uploadPath);
-
-            Path filePath = uploadPath.resolve(storedFilename);
-
-            file.transferTo(filePath.toFile());
-
-            return "/uploads/iot/" + storedFilename;
-        } catch (IOException e) {
-            throw new IllegalStateException("이미지 파일 저장에 실패했습니다.");
         }
     }
 }
